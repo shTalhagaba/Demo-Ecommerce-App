@@ -1,0 +1,38 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build Android
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jdk
+        curl -s "https://get.sdkman.io" | bash
+        source "$HOME/.sdkman/bin/sdkman-init.sh"
+        sdk install gradle 6.7.1
+        npx jetifier
+        npx react-native run-android --variant=release
+
+    - name: Build iOS
+      run: |
+        sudo gem install cocoapods
+        npx pod-install
+        xcodebuild -workspace ios/YourApp.xcworkspace -scheme YourApp -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11,OS=latest' build
